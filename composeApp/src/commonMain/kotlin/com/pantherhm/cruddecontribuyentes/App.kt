@@ -20,6 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.ui.Alignment
+import com.pantherhm.cruddecontribuyentes.screens.AddEstadoScreen
+import com.pantherhm.cruddecontribuyentes.screens.AddMunScreen
+import com.pantherhm.cruddecontribuyentes.screens.UpdateMun
+import com.pantherhm.cruddecontribuyentes.screens.UpdateState
 
 
 @Composable
@@ -44,6 +48,24 @@ fun AppNavHost(navController: NavHostController) {
             composable("detalleestado/{nombreEstado}") { backStackEntry ->
                 val nombreEstado = backStackEntry.savedStateHandle.get<String>("nombreEstado") ?: ""
                 ListaMunicipios(nombreEstado, viewmodel, navController)
+            }
+            composable("addestado")
+            {
+                AddEstadoScreen(viewmodel)
+            }
+            composable("updateestado/{nombreEstado}") { backStackEntry ->
+                val nombreEstado = backStackEntry.savedStateHandle.get<String>("nombreEstado") ?: ""
+                UpdateState(nombreEstado, viewmodel);
+            }
+            composable("addmun/{nombreEstado}") { backStackEntry ->
+                val nombreEstado = backStackEntry.savedStateHandle.get<String>("nombreEstado") ?: ""
+                AddMunScreen(nombreEstado, viewmodel)
+            }
+            composable("updatemun/{nombreEstado}/{nombreMun}") {
+                backStackEntry ->
+                val nombreEstado = backStackEntry.savedStateHandle.get<String>("nombreEstado") ?: ""
+                val nombreMun = backStackEntry.savedStateHandle.get<String>("nombreMun") ?: ""
+                UpdateMun(nombreEstado, nombreMun, viewmodel)
             }
         }
 

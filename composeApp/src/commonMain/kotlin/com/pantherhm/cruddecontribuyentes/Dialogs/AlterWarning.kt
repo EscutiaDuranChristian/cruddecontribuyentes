@@ -7,18 +7,18 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 
 @Composable
-fun DeleteWarning(
+fun AlterWarning(
     nombre: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        title = { Text("Confirmar eliminación") },
-        text = { Text("¿Estás seguro de eliminar el elemento $nombre?") },
+        title = { Text("Confirmar alteración") },
+        text = { Text("¿Estás seguro de alterar este elemento: $nombre?") },
         confirmButton = {
             Button(onClick = { onConfirm() }) {
-                Text("Sí, eliminar")
+                Text("Sí, alterar")
             }
         },
         dismissButton = {

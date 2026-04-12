@@ -27,12 +27,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.runtime.*
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
-import com.pantherhm.cruddecontribuyentes.Dialogs.DeleteWarning
+import com.pantherhm.cruddecontribuyentes.Dialogs.AlterWarning
 import viewModel.Estado
 
 @Composable
@@ -40,14 +41,16 @@ fun StateListScreen(navController: NavController, viewModel: StateListViewModel)
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         var search by remember { mutableStateOf("") }
         val fs1 = (maxWidth.value * 0.05f).sp
-        val fs2 = (maxWidth.value * 0.03f).sp
+        val fss1 = (maxWidth.value * 0.02f).sp
+        val fs2 = (maxWidth.value * 0.025f).sp
+        val fss2 = (maxWidth.value * 0.015f).sp
         val columns = when {
             maxWidth < 600.dp -> 1
             maxWidth < 800.dp -> 2
             else -> 3
         }
         var showDialog by remember { mutableStateOf(false) }
-        var estado by remember { mutableStateOf(Estado("", listOf())) }
+        var estado by remember { mutableStateOf(Estado(0,"", "",mutableStateListOf())) }
 
         Column(modifier = Modifier.fillMaxSize().padding(start = 16.dp, end = 16.dp).border(5.dp, Color.Black, RectangleShape)) {
             TextField(
@@ -77,13 +80,13 @@ fun StateListScreen(navController: NavController, viewModel: StateListViewModel)
                 return@Column
             }
 
-            //Lista de estados 0 /// 0
+            //Lista de estados
             if (columns == 1) {
                 LazyColumn {
                     items(filteredStates) { item ->
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth() // solo ancho, no alto completo
+                                .fillMaxWidth()
                                 .padding(8.dp)
                         ) {
                             Button(
@@ -99,18 +102,22 @@ fun StateListScreen(navController: NavController, viewModel: StateListViewModel)
                                     style = TextStyle(fontSize = fs1)
                                 )
                             }
-
-                            Button(
-                                onClick = { showDialog = true; estado = item },
-                                modifier = Modifier
-                                    .align(Alignment.CenterEnd) // lo pegas a la derecha
-                                    .padding(end = 16.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color.Red,
-                                    contentColor = Color.White
-                                )
-                            ) {
-                                Text("-")
+                            Column(modifier = Modifier
+                                                .align(Alignment.TopEnd)){
+                                Button(
+                                    onClick = { showDialog = true; estado = item },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color.Red,
+                                        contentColor = Color.White
+                                    )
+                                ) {  Text("Delete", style = TextStyle(fontSize = fss1))  }
+                                Button(
+                                    onClick = { navController.navigate("updateEstado/${item.nombre}") },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color.Blue,
+                                        contentColor = Color.White
+                                    )
+                                ) {  Text("Update", style = TextStyle(fontSize = fss1))  }
                             }
                         }
                     }
@@ -124,9 +131,9 @@ fun StateListScreen(navController: NavController, viewModel: StateListViewModel)
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(filteredStates) { item ->
-                        Box(
+                        Column(
                             modifier = Modifier
-                                .fillMaxWidth() // solo ancho, no alto completo
+                                .fillMaxWidth()
                                 .padding(8.dp)
                         ) {
                             Button(
@@ -145,20 +152,23 @@ fun StateListScreen(navController: NavController, viewModel: StateListViewModel)
                                 )
                             }
 
-                            Button(
-                                onClick = { showDialog = true; estado = item },
-                                modifier = Modifier
-                                    .align(Alignment.CenterEnd) // lo pegas a la derecha
-                                    .padding(end = 16.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color.Red,
-                                    contentColor = Color.White
-                                )
-                            ) {
-                                Text("-")
+                            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                Button(
+                                    onClick = { showDialog = true; estado = item },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color.Red,
+                                        contentColor = Color.White
+                                    )
+                                ) {  Text("Delete", style = TextStyle(fontSize = fss2))  }
+                                Button(
+                                    onClick = { navController.navigate("updateestado/${item.nombre}") },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color.Blue,
+                                        contentColor = Color.White
+                                    )
+                                ) {  Text("Update", style = TextStyle(fontSize = fss2))  }
                             }
                         }
-
                     }
                 }
             }
@@ -166,12 +176,10 @@ fun StateListScreen(navController: NavController, viewModel: StateListViewModel)
         Button(onClick = { navController.navigate("addestado") } ,
                 colors = ButtonDefaults.buttonColors(Color.Green, Color.White),
                 modifier = Modifier.align(Alignment.BottomEnd))
-        {
-            Text("Add")
-        }
+            {  Text("Add")  }
 
         if (showDialog) {
-            DeleteWarning(
+            AlterWarning(
                 nombre = estado.nombre,
                 onConfirm = {
                     viewModel.RemoveEstado(estado.nombre)
