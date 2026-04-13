@@ -22,6 +22,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.ui.Alignment
 import com.pantherhm.cruddecontribuyentes.screens.AddEstadoScreen
 import com.pantherhm.cruddecontribuyentes.screens.AddMunScreen
+import com.pantherhm.cruddecontribuyentes.screens.DetalleMun
 import com.pantherhm.cruddecontribuyentes.screens.UpdateMun
 import com.pantherhm.cruddecontribuyentes.screens.UpdateState
 
@@ -67,6 +68,13 @@ fun AppNavHost(navController: NavHostController) {
                 val nombreMun = backStackEntry.savedStateHandle.get<String>("nombreMun") ?: ""
                 UpdateMun(nombreEstado, nombreMun, viewmodel)
             }
+            composable("detallemun/{nombreEstado}/{nombreMun}")
+            {
+                backStackEntry ->
+                val nombreEstado = backStackEntry.savedStateHandle.get<String>("nombreEstado") ?: ""
+                val nombreMun = backStackEntry.savedStateHandle.get<String>("nombreMun") ?: ""
+                DetalleMun(nombreEstado, nombreMun, viewmodel, navController)
+            }
         }
 
         val backStackEntry by navController.currentBackStackEntryAsState()
@@ -75,12 +83,10 @@ fun AppNavHost(navController: NavHostController) {
         if (currentRoute != "listaEstados") {
             Button(
                 modifier = Modifier
-                    .padding(16.dp)
+                    .padding(vertical = 16.dp, horizontal = 25.dp)
                     .align(Alignment.BottomStart),
                 onClick = { navController.popBackStack() }
-            ) {
-                Text("Volver")
-            }
+            ) {  Text("Volver") }
         }
     }
 }

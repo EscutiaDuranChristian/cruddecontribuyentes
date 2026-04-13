@@ -16,19 +16,15 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import viewModel.StateListViewModel
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import java.awt.Button
 import  androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -40,13 +36,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.pantherhm.cruddecontribuyentes.Dialogs.AlterWarning
-import viewModel.Estado
+import viewModel.DomicilioFiscal
 import viewModel.Municipio
+import viewModel.Persona
+import viewModel.PersonaFisica
+import viewModel.PersonaMoral
 
 @Composable
-fun ListaMunicipios(nombreEstado: String, viewModel: StateListViewModel, navController: NavHostController) {
-    val estado = viewModel.states.find { it.nombre == nombreEstado }
-
+fun DetalleMun(nombreEstado : String, nombreMun : String, viewmodel : StateListViewModel, navController: NavHostController)
+{
+    val estado = viewmodel.states.find { it.nombre.equals(nombreEstado) }
+    val mun = estado?.municipios?.find { it.nombre.equals(nombreMun) }
+    if(estado == null || mun == null) return
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         var search by remember { mutableStateOf("") }
         val fs1 = (maxWidth.value * 0.05f).sp
@@ -59,27 +60,29 @@ fun ListaMunicipios(nombreEstado: String, viewModel: StateListViewModel, navCont
             else -> 3
         }
         var showDialog by remember { mutableStateOf(false) }
-        var municipio by remember { mutableStateOf(Municipio(0,"", "", mutableStateListOf())) }
+        var persona by remember { mutableStateOf(Persona(DomicilioFiscal("","","",
+            "","","","", 0,0,0,
+            0,0,"","",""))) }
 
         Column(modifier = Modifier.fillMaxSize().padding(start = 16.dp, end = 16.dp).border(5.dp, Color.Black, RectangleShape)) {
             TextField(
                 value = search,
                 onValueChange = { search = it },
-                label = { Text("Buscar estado") },
+                label = { Text("Rfc del representante o curp de la persona fisica") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp))
 
-            val filteredStates = estado?.municipios?.filter {
-                it.nombre.contains(search, ignoreCase = true)
-            } ?: listOf()
+            val filtered = mun.contribuidores.filter {
+                        it is PersonaMoral && it.rfcRepresentante.contains(search) ||
+                        it is PersonaFisica && it.curp.contains(search)
+            }
 
             //Mensaje de resultados
-            if(filteredStates.isEmpty()){
+            if(filtered.isEmpty()){
                 Text(
                     text = when {
-                        estado?.municipios == null -> "No hay municipios aun"
-                        estado.municipios.isEmpty() -> "No hay municipios aun"
+                        mun.contribuidores.isEmpty() -> "No hay nadie inscrito aun"
                         else -> "No hay resultados"
                     },
                     modifier = Modifier
@@ -96,19 +99,30 @@ fun ListaMunicipios(nombreEstado: String, viewModel: StateListViewModel, navCont
             //Lista de estados
             if (columns == 1) {
                 LazyColumn {
-                    items(filteredStates) { item ->
+                    items(filtered){ item ->
+                        val identify = when {
+                            item is PersonaFisica -> item.curp
+                            item is PersonaMoral -> item.rfcRepresentante
+                            else -> "No identificado"
+                        }
+                        val tipo = when{
+                            item is PersonaFisica -> "fisica"
+                            item is PersonaMoral -> "moral"
+                            else -> "NAT"
+                        }
+
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(8.dp)
                         ) {
                             Button(
-                                onClick = { navController.navigate("detallemun/${nombreEstado}/${item.nombre}") },
+                                onClick = { navController.navigate("detallepersona/${nombreEstado}/${mun}/${tipo}/${identify}") },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RectangleShape
                             ) {
                                 Text(
-                                    text = item.nombre,
+                                    text = identify,
                                     modifier = Modifier
                                         .padding(16.dp),
                                     textAlign = TextAlign.Center,
@@ -118,14 +132,14 @@ fun ListaMunicipios(nombreEstado: String, viewModel: StateListViewModel, navCont
                             Column(modifier = Modifier
                                 .align(Alignment.TopEnd)){
                                 Button(
-                                    onClick = { showDialog = true; municipio = item },
+                                    onClick = { showDialog = true; persona = item },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = Color.Red,
                                         contentColor = Color.White
                                     )
                                 ) {  Text("Delete", style = TextStyle(fontSize = fss1))  }
                                 Button(
-                                    onClick = { navController.navigate("updatemun/${nombreEstado}/${item.nombre}") },
+                                    onClick = { navController.navigate("updatepersona/${nombreEstado}/${nombreMun}/${tipo}/${identify}") },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = Color.Blue,
                                         contentColor = Color.White
@@ -143,19 +157,29 @@ fun ListaMunicipios(nombreEstado: String, viewModel: StateListViewModel, navCont
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(filteredStates) { item ->
+                    items(items = filtered) { item ->
+                        val identify = when {
+                            item is PersonaFisica -> item.curp
+                            item is PersonaMoral -> item.rfcRepresentante
+                            else -> "No identificado"
+                        }
+                        val tipo = when{
+                            item is PersonaFisica -> "fisica"
+                            item is PersonaMoral -> "moral"
+                            else -> "NAT"
+                        }
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(8.dp)
                         ) {
                             Button(
-                                onClick = { navController.navigate("detallemun/${nombreEstado}/${item.nombre}") },
+                                onClick = { navController.navigate("detallepersona/${nombreEstado}/${nombreMun}/${tipo}/${identify}") },
                                 modifier = Modifier.padding(8.dp),
                                 shape = RectangleShape
                             ) {
                                 Text(
-                                    text = item.nombre,
+                                    text = identify,
                                     textAlign = TextAlign.Center,
                                     style = TextStyle(fontSize = fs2),
                                     modifier = Modifier
@@ -167,14 +191,14 @@ fun ListaMunicipios(nombreEstado: String, viewModel: StateListViewModel, navCont
 
                             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                 Button(
-                                    onClick = { showDialog = true; municipio = item },
+                                    onClick = { showDialog = true; persona = item },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = Color.Red,
                                         contentColor = Color.White
                                     )
                                 ) {  Text("Delete", style = TextStyle(fontSize = fss2))  }
                                 Button(
-                                    onClick = { navController.navigate("updatemun/${nombreEstado}/${item.nombre}") },
+                                    onClick = { navController.navigate("updatepersona/${nombreEstado}/${nombreMun}/${tipo}/${identify}") },
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = Color.Blue,
                                         contentColor = Color.White
@@ -187,7 +211,7 @@ fun ListaMunicipios(nombreEstado: String, viewModel: StateListViewModel, navCont
             }
         }
 
-        Button(onClick = { navController.navigate("addmun/${nombreEstado}") } ,
+        Button(onClick = { navController.navigate("addpersona/${nombreEstado}/${nombreMun}") } ,
             colors = ButtonDefaults.buttonColors(Color.Green, Color.White),
             modifier = Modifier
                 .padding(vertical = 16.dp, horizontal = 25.dp)
@@ -199,10 +223,20 @@ fun ListaMunicipios(nombreEstado: String, viewModel: StateListViewModel, navCont
         {  Text("Add")  }
 
         if (showDialog) {
+            val identify = when {
+                persona is PersonaFisica -> (persona as PersonaFisica).curp
+                persona is PersonaMoral -> (persona as PersonaMoral).rfcRepresentante
+                else -> "NAT"
+            }
+            val tipo = when{
+                persona is PersonaFisica -> "fisica"
+                persona is PersonaMoral -> "moral"
+                else -> "NAT"
+            }
             AlterWarning(
-                nombre = municipio.nombre,
+                nombre = identify,
                 onConfirm = {
-                    viewModel.DeleteMun(nombreEstado,municipio.nombre)
+                    viewmodel.DeletePersona(nombreEstado, nombreMun, tipo, identify)
                     showDialog = false
                 },
                 onDismiss = { showDialog = false }
@@ -210,3 +244,4 @@ fun ListaMunicipios(nombreEstado: String, viewModel: StateListViewModel, navCont
         }
     }
 }
+

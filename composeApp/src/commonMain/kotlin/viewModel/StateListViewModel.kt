@@ -2,23 +2,22 @@ package viewModel
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.toMutableStateList
+import cruddecontribuyentes.composeapp.generated.resources.Res
 
 
 data class Estado(val id : Int, val nombre: String, val nab : String, var municipios: MutableList<Municipio>)
 data class Municipio(val id : Int, val nombre : String, val nab : String, var contribuidores: MutableList<Persona>)
-open class Persona(val id : Int, val domicilioFiscal: DomicilioFiscal)
+open class Persona(val domicilioFiscal: DomicilioFiscal)
 class PersonaFisica (
-    id : Int,
     domicilioFiscal: DomicilioFiscal,
     val curp : String,
     val nombreCompleto : String,
     val fechaNac : String,
     val correoElec : String,
     val tel : String,
-) : Persona(id, domicilioFiscal)
+) : Persona(domicilioFiscal)
 
 class PersonaMoral(
-    id: Int,
     domicilioFiscal: DomicilioFiscal,
     val razonSocial : String,
     val fechaConst : String,
@@ -27,7 +26,7 @@ class PersonaMoral(
     val noPoliza : Int,
     val regimenCapital : String,
     val actEconomica : String,
-) : Persona(id, domicilioFiscal)
+) : Persona(domicilioFiscal)
 
 data class DomicilioFiscal(
     val cp : String,
@@ -175,5 +174,21 @@ class StateListViewModel {
             return AnsStates.BadFormat
         }
         return AnsStates.Repeted
+    }
+    fun DeletePersona(est : String, mun : String, tipo : String, identify : String)
+    {
+        val estado = states.find { it.nombre.lowercase().equals(est.lowercase()) }
+        if(estado == null) return
+        val municipio = estado.municipios.find { it.nombre.lowercase().equals(mun.lowercase()) }
+        if(municipio == null) return
+        if(tipo.equals("fisica"))
+        {
+            municipio.contribuidores.removeIf { it is PersonaFisica && it.curp.equals(identify) }
+            return
+        }
+        if(tipo.equals("moral"))
+        {
+            municipio.contribuidores.removeIf { it is PersonaMoral && it.rfcRepresentante.equals(identify) }
+        }
     }
 }

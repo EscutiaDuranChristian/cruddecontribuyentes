@@ -66,7 +66,6 @@ fun AddEstadoScreen(viewModel: StateListViewModel) {
                     attemped = true
                 },
                 modifier = Modifier.fillMaxWidth(0.8f)
-                    .padding(vertical = 8.dp),
             ) {  Text("Add")  }
         }
     }

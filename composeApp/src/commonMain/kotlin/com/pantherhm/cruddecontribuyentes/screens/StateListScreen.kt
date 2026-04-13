@@ -173,9 +173,16 @@ fun StateListScreen(navController: NavController, viewModel: StateListViewModel)
                 }
             }
         }
+
         Button(onClick = { navController.navigate("addestado") } ,
                 colors = ButtonDefaults.buttonColors(Color.Green, Color.White),
-                modifier = Modifier.align(Alignment.BottomEnd))
+                modifier = Modifier
+                            .padding(vertical = 16.dp, horizontal = 25.dp)
+                            .align(when{
+                                    columns == 1 -> Alignment.TopEnd
+                                    else -> Alignment.BottomEnd
+                                })
+        )
             {  Text("Add")  }
 
         if (showDialog) {
