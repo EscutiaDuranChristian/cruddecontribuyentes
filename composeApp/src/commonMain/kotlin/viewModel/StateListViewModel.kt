@@ -206,4 +206,24 @@ class StateListViewModel {
         }
         return false
     }
+    fun UpdatePersona(est : String, mun : String, tipo : String, original: String, persona: Persona) : Boolean
+    {
+        val estado = states.find { it.nombre.lowercase().equals(est.lowercase()) }
+        if(estado == null) return false
+        val municipio = estado.municipios.find { it.nombre.lowercase().equals(mun.lowercase()) }
+        if(municipio == null) return false
+        if(municipio.contribuidores.find {
+                it is PersonaFisica && persona is PersonaFisica && it.curp.equals(persona.curp)  ||
+                        it is PersonaMoral && persona is PersonaMoral &&
+                        it.rfcRepresentante.equals(persona.rfcRepresentante)
+            } == null) {
+            municipio.contribuidores.add(persona)
+            municipio.contribuidores.removeIf{
+                tipo == "fisica" && it is PersonaFisica && it.curp.equals(original) ||
+                        tipo == "moral" && it is PersonaMoral && it.rfcRepresentante.equals(original)
+            }
+            return true
+        }
+        return false
+    }
 }
