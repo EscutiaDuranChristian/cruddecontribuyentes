@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -14,28 +16,31 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import viewModel.StateListViewModel
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
 import viewModel.DomicilioFiscal
 import viewModel.Persona
 import viewModel.PersonaFisica
 import viewModel.PersonaMoral
-
+import viewModel.StateListViewModel
 
 @Composable
-fun AddPersona(estadoNombre: String, municipio: String, viewModel : StateListViewModel)
-{
+fun UpdatePersona(estadoNombre: String, munN: String, tipo : String, identify : String, viewmodel: StateListViewModel) {
+    var estado = viewmodel.states.find { it.nombre.equals(estadoNombre) }
+    if(estado == null) return
+    var mun = estado.municipios.find { it.nombre.equals((munN)) }
+    if(mun == null) return
+    var persona = mun.contribuidores.find {
+        it is PersonaFisica && tipo == "fisica" && it.curp.equals(identify) ||
+                it is PersonaMoral && tipo == "moral" && it.rfcRepresentante.equals(identify)
+    }
+    if(persona == null) return
+
     var added by remember { mutableStateOf(false) }
     var attemped by remember { mutableStateOf(false) }
+
     var name by remember { mutableStateOf("") }
     var curp by remember { mutableStateOf("") }
     var fechaNac by remember { mutableStateOf("") }
@@ -47,8 +52,6 @@ fun AddPersona(estadoNombre: String, municipio: String, viewModel : StateListVie
     var rfcsocio by remember { mutableStateOf("") }
     var regimenCapital by remember { mutableStateOf("General") }
     var actEconomica by remember { mutableStateOf("Agropecuario y extractivo") }
-
-    var tipoPersona by remember { mutableStateOf("Persona Fisica") }
 
     var cp by remember { mutableStateOf("") }
     var localidad by remember { mutableStateOf("") }
@@ -63,24 +66,47 @@ fun AddPersona(estadoNombre: String, municipio: String, viewModel : StateListVie
     var caracteristicas by remember { mutableStateOf("") }
     var regimenFiscal by remember { mutableStateOf("General de ley") }
 
+    if(persona is PersonaFisica)
+    {
+        name = persona.nombreCompleto
+        curp = persona.curp
+        fechaNac = persona.fechaNac
+        correo = persona.correoElec
+        tel = persona.tel
+    }
+
+    if(persona is PersonaMoral)
+    {
+        rfc = persona.rfcRepresentante
+        razonSocial = persona.razonSocial
+        rfcsocio = persona.rfcSocio
+        regimenCapital = persona.regimenCapital
+        fechaNac = persona.fechaConst
+    }
+
+    cp = persona.domicilioFiscal.cp
+    localidad = persona.domicilioFiscal.localidad
+    colonia = persona.domicilioFiscal.colonia
+    vialidad = persona.domicilioFiscal.vialidad
+    numeroExterior = persona.domicilioFiscal.numeroExterior
+    entrCalle1 = persona.domicilioFiscal.entrecalle1
+    entrCalle2 = persona.domicilioFiscal.entrecalle2
+    refAdd = persona.domicilioFiscal.referenciaAdicional
+    caracteristicas = persona.domicilioFiscal.caracteristicas
+    regimenFiscal = persona.domicilioFiscal.regimenFiscal
+    actEconomica = persona.domicilioFiscal.actividadEconomica
+
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.align(Alignment.Center)
         ) {
-            item {
-                DropdownMenuBox(
-                    options = listOf("Persona Física", "Persona Moral"),
-                    selectedOption = tipoPersona,
-                    onOptionSelected = { tipoPersona = it }
-                )
-            }
 
             item {
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
             item {
-                if (tipoPersona == "Persona Fisica") {
+                if (tipo == "fisica") {
                     Column {
                         TextField(
                             value = name,
@@ -261,7 +287,7 @@ fun AddPersona(estadoNombre: String, municipio: String, viewModel : StateListVie
                             onOptionSelected = { actEconomica = it },
                         )
                     }
-                    if(tipoPersona == "Persona Moral")
+                    if(tipo == "fisica")
                     {
                         Box {
                             Text("Regimen Fiscal")
@@ -310,27 +336,27 @@ fun AddPersona(estadoNombre: String, municipio: String, viewModel : StateListVie
                             vialidad.equals("Boulevard") -> "Bvo"
                             else -> vialidad
                         } + "."
-                        var domicilioFiscal = DomicilioFiscal(cp, estadoNombre, municipio, localidad, colonia, vialidad,
+                        var domicilioFiscal = DomicilioFiscal(cp, estadoNombre, munN, localidad, colonia, vialidad,
                             nombreV, numeroExterior, numeroInterior, entrCalle1,
                             entrCalle2, refAdd, caracteristicas,
                             actEconomica, regimenFiscal)
-                        var persona = Persona(domicilioFiscal)
+                        var personaV = Persona(domicilioFiscal)
 
-                        if(tipoPersona == "Persona Fisica")
+                        if(tipo == "fisica")
                         {
-                            persona = PersonaFisica(domicilioFiscal, curp.uppercase(), name, fechaNac, correo,
+                            personaV = PersonaFisica(domicilioFiscal, curp.uppercase(), name, fechaNac, correo,
                                 tel)
                         }
                         else
                         {
-                            persona = PersonaMoral(domicilioFiscal, razonSocial, fechaNac, rfc.uppercase(),
-                                rfcsocio, viewModel.states.size, regimenCapital)
+                            personaV = PersonaMoral(domicilioFiscal, razonSocial, fechaNac, rfc.uppercase(),
+                                rfcsocio, viewmodel.states.size, regimenCapital)
                         }
 
-                        added = viewModel.AddPersona(estadoNombre, municipio, persona)
+                        added = viewmodel.UpdatePersona(estadoNombre, munN, tipo, identify, personaV)
                         attemped = true
                     },
-                        Modifier.padding(vertical = 8.dp),
+                    Modifier.padding(vertical = 8.dp),
                 ) {  Text("Add")  }
             }
             if(attemped )
@@ -338,49 +364,11 @@ fun AddPersona(estadoNombre: String, municipio: String, viewModel : StateListVie
                 item {
                     Text(
                         text = when {
-                            added -> "Persona agregada con exito"
+                            added -> "Persona agregadad con exito"
                             else -> "Algo salio mal. Porfavor revice la informacion"
                         }
                     )
                 }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DropdownMenuBox(
-    options: List<String>,
-    selectedOption: String,
-    onOptionSelected: (String) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded }
-    ) {
-        TextField(
-            value = selectedOption,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Régimen de Capital") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-            modifier = Modifier.menuAnchor()
-        )
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            options.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(option) },
-                    onClick = {
-                        onOptionSelected(option)
-                        expanded = false
-                    }
-                )
             }
         }
     }

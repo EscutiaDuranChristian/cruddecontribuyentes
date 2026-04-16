@@ -122,7 +122,7 @@ fun DetalleMun(nombreEstado : String, nombreMun : String, viewmodel : StateListV
                                 shape = RectangleShape
                             ) {
                                 Text(
-                                    text = identify,
+                                    text = "${tipo[0].uppercase()}${identify}",
                                     modifier = Modifier
                                         .padding(16.dp),
                                     textAlign = TextAlign.Center,
@@ -179,7 +179,7 @@ fun DetalleMun(nombreEstado : String, nombreMun : String, viewmodel : StateListV
                                 shape = RectangleShape
                             ) {
                                 Text(
-                                    text = identify,
+                                    text = "${tipo[0].uppercase()}: ${identify}",
                                     textAlign = TextAlign.Center,
                                     style = TextStyle(fontSize = fs2),
                                     modifier = Modifier
