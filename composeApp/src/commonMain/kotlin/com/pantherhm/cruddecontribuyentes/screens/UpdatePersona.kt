@@ -58,8 +58,8 @@ fun UpdatePersona(estadoNombre: String, munN: String, tipo : String, identify : 
     var colonia by remember { mutableStateOf("") }
     var vialidad by remember {mutableStateOf("Calle")}
     var nombreVialidad by remember { mutableStateOf("") }
-    var numeroExterior by remember { mutableStateOf(0) }
-    var numeroInterior by remember { mutableStateOf(0) }
+    var numeroExterior by remember { mutableStateOf("") }
+    var numeroInterior by remember { mutableStateOf("") }
     var entrCalle1 by remember { mutableStateOf("") }
     var entrCalle2 by remember { mutableStateOf("") }
     var refAdd by remember { mutableStateOf("") }
@@ -235,14 +235,14 @@ fun UpdatePersona(estadoNombre: String, munN: String, tipo : String, identify : 
                     }
                     TextField(
                         value = numeroExterior.toString(),
-                        onValueChange = { numeroExterior = it.toInt() },
+                        onValueChange = { numeroExterior = it },
                         label = { Text("Numero exterior") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                     TextField(
                         value = numeroInterior.toString(),
-                        onValueChange = { numeroInterior = it.toInt() },
+                        onValueChange = { numeroInterior = it },
                         label = { Text("Numero interior") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
