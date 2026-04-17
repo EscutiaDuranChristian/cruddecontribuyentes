@@ -1,50 +1,41 @@
 package com.pantherhm.cruddecontribuyentes
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.pantherhm.cruddecontribuyentes.screens.ListaMunicipios
-import com.pantherhm.cruddecontribuyentes.screens.StateListScreen
-import androidx.navigation.compose.rememberNavController
-import viewModel.StateListViewModel
-import androidx.compose.material3.Text
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.compose.ui.Alignment
+import androidx.navigation.compose.rememberNavController
 import com.pantherhm.cruddecontribuyentes.screens.AddEstadoScreen
 import com.pantherhm.cruddecontribuyentes.screens.AddMunScreen
 import com.pantherhm.cruddecontribuyentes.screens.AddPersona
 import com.pantherhm.cruddecontribuyentes.screens.DetalleMun
 import com.pantherhm.cruddecontribuyentes.screens.DetallePersona
+import com.pantherhm.cruddecontribuyentes.screens.ListaMunicipios
+import com.pantherhm.cruddecontribuyentes.screens.StateListScreen
 import com.pantherhm.cruddecontribuyentes.screens.UpdateMun
 import com.pantherhm.cruddecontribuyentes.screens.UpdatePersona
 import com.pantherhm.cruddecontribuyentes.screens.UpdateState
-
+import viewModel.StateListViewModel
 
 @Composable
-@Preview
-fun App() {
+fun App(viewmodel: StateListViewModel) {
     val navController = rememberNavController()
-    AppNavHost(navController = navController)
+    AppNavHost(navController = navController, viewmodel = viewmodel)
 }
 
 @Composable
-fun AppNavHost(navController: NavHostController) {
-
-    Box(modifier = Modifier.fillMaxSize())
-    {
-
-        val viewmodel = remember { StateListViewModel() }
-
+fun AppNavHost(navController: NavHostController, viewmodel: StateListViewModel) {
+    Box(modifier = Modifier.fillMaxSize()) {
         NavHost(navController, startDestination = "listaEstados") {
             composable("listaEstados") {
                 StateListScreen(navController, viewmodel)
@@ -53,47 +44,40 @@ fun AppNavHost(navController: NavHostController) {
                 val nombreEstado = backStackEntry.savedStateHandle.get<String>("nombreEstado") ?: ""
                 ListaMunicipios(nombreEstado, viewmodel, navController)
             }
-            composable("addestado")
-            {
+            composable("addestado") {
                 AddEstadoScreen(viewmodel)
             }
             composable("updateestado/{nombreEstado}") { backStackEntry ->
                 val nombreEstado = backStackEntry.savedStateHandle.get<String>("nombreEstado") ?: ""
-                UpdateState(nombreEstado, viewmodel);
+                UpdateState(nombreEstado, viewmodel)
             }
             composable("addmun/{nombreEstado}") { backStackEntry ->
                 val nombreEstado = backStackEntry.savedStateHandle.get<String>("nombreEstado") ?: ""
                 AddMunScreen(nombreEstado, viewmodel)
             }
-            composable("updatemun/{nombreEstado}/{nombreMun}") {
-                backStackEntry ->
+            composable("updatemun/{nombreEstado}/{nombreMun}") { backStackEntry ->
                 val nombreEstado = backStackEntry.savedStateHandle.get<String>("nombreEstado") ?: ""
                 val nombreMun = backStackEntry.savedStateHandle.get<String>("nombreMun") ?: ""
                 UpdateMun(nombreEstado, nombreMun, viewmodel)
             }
-            composable("detallemun/{nombreEstado}/{nombreMun}")
-            {
-                backStackEntry ->
+            composable("detallemun/{nombreEstado}/{nombreMun}") { backStackEntry ->
                 val nombreEstado = backStackEntry.savedStateHandle.get<String>("nombreEstado") ?: ""
                 val nombreMun = backStackEntry.savedStateHandle.get<String>("nombreMun") ?: ""
                 DetalleMun(nombreEstado, nombreMun, viewmodel, navController)
             }
-            composable ("addpersona/{nombreEstado}/{nombreMun}") {
-                backStackEntry ->
+            composable("addpersona/{nombreEstado}/{nombreMun}") { backStackEntry ->
                 val nombreEstado = backStackEntry.savedStateHandle.get<String>("nombreEstado") ?: ""
                 val nombreMun = backStackEntry.savedStateHandle.get<String>("nombreMun") ?: ""
                 AddPersona(nombreEstado, nombreMun, viewmodel)
             }
-            composable("updatepersona/{nombreEstado}/{nombreMun}/{tipo}/{identify}"){
-                backStackEntry ->
+            composable("updatepersona/{nombreEstado}/{nombreMun}/{tipo}/{identify}") { backStackEntry ->
                 val nombreEstado = backStackEntry.savedStateHandle.get<String>("nombreEstado") ?: ""
                 val nombreMun = backStackEntry.savedStateHandle.get<String>("nombreMun") ?: ""
                 val tipo = backStackEntry.savedStateHandle.get<String>("tipo") ?: ""
                 val identify = backStackEntry.savedStateHandle.get<String>("identify") ?: ""
                 UpdatePersona(nombreEstado, nombreMun, tipo, identify, viewmodel)
             }
-            composable("detallepersona/{nombreEstado}/{nombreMun}/{tipo}/{identify}"){
-                backStackEntry ->
+            composable("detallepersona/{nombreEstado}/{nombreMun}/{tipo}/{identify}") { backStackEntry ->
                 val nombreEstado = backStackEntry.savedStateHandle.get<String>("nombreEstado") ?: ""
                 val nombreMun = backStackEntry.savedStateHandle.get<String>("nombreMun") ?: ""
                 val tipo = backStackEntry.savedStateHandle.get<String>("tipo") ?: ""
@@ -111,7 +95,9 @@ fun AppNavHost(navController: NavHostController) {
                     .padding(vertical = 16.dp, horizontal = 25.dp)
                     .align(Alignment.BottomStart),
                 onClick = { navController.popBackStack() }
-            ) {  Text("Volver") }
+            ) {
+                Text("Volver")
+            }
         }
     }
 }

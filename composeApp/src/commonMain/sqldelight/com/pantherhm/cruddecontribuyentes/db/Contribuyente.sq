@@ -73,7 +73,7 @@ CREATE TABLE PersonaMoral (
 
 -- ============ QUERIES Estado ============
 getAllEstados:
-SELECT * FROM Estado ORDER BY nombre ASC;
+SELECT id, nombre, nab FROM Estado ORDER BY nombre ASC;
 
 insertEstado:
 INSERT INTO Estado(nombre, nab) VALUES (?, ?);

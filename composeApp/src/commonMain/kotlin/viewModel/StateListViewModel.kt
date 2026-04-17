@@ -2,8 +2,7 @@ package viewModel
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.toMutableStateList
-import cruddecontribuyentes.composeapp.generated.resources.Res
-
+import com.pantherhm.cruddecontribuyentes.data.ContribuyentesRepository
 
 data class Estado(val id : Int, val nombre: String, val nab : String, var municipios: MutableList<Municipio>)
 data class Municipio(val id : Int, val nombre : String, val nab : String, var contribuidores: MutableList<Persona>)
@@ -45,11 +44,12 @@ data class DomicilioFiscal(
     val regimenFiscal : String
 )
 
-class StateListViewModel {
-    val nValidoRegex = "[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+( (Del |De La|El)?[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)*".toRegex()
-    var states = mutableStateListOf(
-        Estado(0, "Guanajuato", "GTO", mutableStateListOf(Municipio(0, "Uriangato", "URI", mutableStateListOf()), Municipio(1, "Moroleón", "MORO", mutableStateListOf()), Municipio(2, "Irapuato", "IRA",  mutableStateListOf()))),
-        Estado(1, "Jalisco",  "JAL", mutableStateListOf(Municipio(1, "Guadalajara", "GUA", mutableStateListOf()), Municipio(1, "Zapopan", "ZAP",mutableStateListOf()), Municipio(2, "Tlapelalque", "TLAP", mutableStateListOf()))),
+class StateListViewModel(private val repository: ContribuyentesRepository) {
+    val nValidoRegex = "[A-ZÃÃ‰ÃÃ“ÃšÃ‘][a-zÃ¡Ã©Ã­Ã³ÃºÃ±]+( (Del |De La|El)?[A-ZÃÃ‰ÃÃ“ÃšÃ‘][a-zÃ¡Ã©Ã­Ã³ÃºÃ±]+)*".toRegex()
+
+    private val defaultStates = listOf(
+        Estado(0, "Guanajuato", "GTO", mutableStateListOf()),
+        Estado(1, "Jalisco",  "JAL", mutableStateListOf()),
         Estado(2,"Hidalgo", "HGO", mutableStateListOf()),
         Estado(3,"Colima",  "COL", mutableStateListOf()),
         Estado(4,"San Luis Potosi", "SLP", mutableStateListOf()),
@@ -57,7 +57,7 @@ class StateListViewModel {
         Estado(6,"Durango",  "DGO",mutableStateListOf()),
         Estado(7,"Aguascalientes", "AGS", mutableStateListOf()),
         Estado(8,"Oaxaca",  "OAX", mutableStateListOf()),
-        Estado(9,"Yucatán", "YUC", mutableStateListOf()),
+        Estado(9,"YucatÃ¡n", "YUC", mutableStateListOf()),
         Estado(10,"Veracruz", "VER",mutableStateListOf()),
         Estado(11,"Tlaxcala", "TLAX", mutableStateListOf()),
         Estado(12,"Estado De Mexico", "MEX",mutableStateListOf()),
@@ -79,151 +79,150 @@ class StateListViewModel {
         Estado(28,"Chiapas",  "CHP", mutableStateListOf()),
         Estado(29,"Puebla",  "PUE", mutableStateListOf()),
         Estado(30,"Sinaloa", "SIN", mutableStateListOf()),
-        Estado(31, "Míchoacán", "MIC", mutableStateListOf()),
-        )
+        Estado(31, "MÃ­choacÃ¡n", "MIC", mutableStateListOf()),
+    )
+
+    var states = mutableStateListOf<Estado>()
+
     init {
-        states = states.sortedBy { it.nombre }.toMutableStateList()
+        syncStatesFromDatabase()
     }
 
-    fun RemoveEstado(nombre : String)
-    {
-        states.removeIf { it.nombre.lowercase().equals(nombre.lowercase()) }
+    fun RemoveEstado(nombre : String) {
+        val estado = states.find { it.nombre.equals(nombre, ignoreCase = true) } ?: return
+        repository.deleteEstado(estado.id)
+        states.remove(estado)
+        syncStatesFromDatabase()
     }
-    fun AddEstado(name : String) : AnsStates
-    {
+
+    fun AddEstado(name : String) : AnsStates {
         val n = name.trimEnd()
-        val item = states.find { it.nombre.lowercase().equals(n.lowercase()) }
+        val item = states.find { it.nombre.equals(n, ignoreCase = true) }
         if(item == null) {
             if (nValidoRegex.matches(n)) {
-                val el = n.split(" ")
-                var abr = ""
-                val id = states.size;
-                for (e in el) abr += e[0];
-                if (abr.length == 1) abr += el[0][1];
-                states.add(Estado(id, n, abr, mutableStateListOf()))
-                states = states.sortedBy { it.nombre }.toMutableStateList()
+                repository.insertEstado(n, createAbbreviation(n))
+                syncStatesFromDatabase()
                 return AnsStates.Acepted
             }
             return AnsStates.BadFormat
         }
         return AnsStates.Repeted
     }
-    fun UpdateEstado(original : String, name : String) : AnsStates
-    {
+
+    fun UpdateEstado(original : String, name : String) : AnsStates {
         val n = name.trimEnd()
-        val item = states.find { it.nombre.lowercase().equals(n.lowercase()) }
+        val current = states.find { it.nombre.equals(original, ignoreCase = true) } ?: return AnsStates.BadFormat
+        val item = states.find { it.nombre.equals(n, ignoreCase = true) && it.id != current.id }
         if(item == null) {
             if (nValidoRegex.matches(n)) {
-                states.removeIf { it.nombre.lowercase().equals(original.lowercase()) }
-                val el = n.split(" ")
-                var abr = ""
-                val id = states.size;
-                for (e in el) abr += e[0];
-                if (abr.length == 1) abr += el[0][1];
-                states.add(Estado(id, n, abr, mutableStateListOf()))
-                states = states.sortedBy { it.nombre }.toMutableStateList()
+                repository.updateEstado(current.id, n, createAbbreviation(n))
+                syncStatesFromDatabase()
                 return AnsStates.Acepted
             }
             return AnsStates.BadFormat
         }
         return AnsStates.Repeted
     }
-    fun AddMun(estado : String, name : String) : AnsStates
-    {
+
+    fun AddMun(estado : String, name : String) : AnsStates {
         val n = name.trimEnd()
-        val estado = states.find { it.nombre.lowercase().equals(estado.lowercase()) }
-        val mun = estado?.municipios?.find { it.nombre.lowercase().equals(n.lowercase()) }
+        val estadoActual = states.find { it.nombre.equals(estado, ignoreCase = true) }
+        val mun = estadoActual?.municipios?.find { it.nombre.equals(n, ignoreCase = true) }
         if(mun == null) {
             if (nValidoRegex.matches(n)) {
-                val el = n.split(" ")
-                var abr = ""
-                val id = estado?.municipios?.size ?: 0;
-                for (e in el) abr += e[0];
-                if (abr.length == 1) abr += el[0][1];
-                estado?.municipios?.add(Municipio(id, n, abr, mutableStateListOf()))
-                estado?.municipios = estado.municipios.sortedBy { it.nombre }.toMutableList()
+                if (estadoActual == null) return AnsStates.BadFormat
+                repository.insertMunicipio(estadoActual.id, n, createAbbreviation(n))
+                syncStatesFromDatabase()
                 return AnsStates.Acepted
             }
             return AnsStates.BadFormat
         }
         return AnsStates.Repeted
     }
-    fun DeleteMun(estado : String, mun : String)
-    {
-        val estado = states.find { it.nombre.lowercase().equals(estado.lowercase()) }
-        estado?.municipios?.removeIf { it.nombre.lowercase().equals(mun.lowercase()) }
+
+    fun DeleteMun(estado : String, mun : String) {
+        val estadoActual = states.find { it.nombre.equals(estado, ignoreCase = true) } ?: return
+        val municipio = estadoActual.municipios.find { it.nombre.equals(mun, ignoreCase = true) } ?: return
+        repository.deleteMunicipio(municipio.id)
+        estadoActual.municipios.remove(municipio)
+        syncStatesFromDatabase()
     }
-    fun UpdateMun(estado : String,  original : String, mun : String) : AnsStates
-    {
+
+    fun UpdateMun(estado : String,  original : String, mun : String) : AnsStates {
         val n = mun.trimEnd()
-        val estado = states.find { it.nombre.lowercase().equals(estado.lowercase()) }
-        val mun = estado?.municipios?.find { it.nombre.lowercase().equals(n.lowercase()) }
-        if(mun == null) {
+        val estadoActual = states.find { it.nombre.equals(estado, ignoreCase = true) } ?: return AnsStates.BadFormat
+        val current = estadoActual.municipios.find { it.nombre.equals(original, ignoreCase = true) } ?: return AnsStates.BadFormat
+        val municipio = estadoActual.municipios.find { it.nombre.equals(n, ignoreCase = true) && it.id != current.id }
+        if(municipio == null) {
             if (nValidoRegex.matches(n)) {
-                estado?.municipios?.removeIf { it.nombre.lowercase().equals(original.lowercase()) }
-                val el = n.split(" ")
-                var abr = ""
-                val id = estado?.municipios?.size ?: 0;
-                for (e in el) abr += e[0];
-                if (abr.length == 1) abr += el[0][1];
-                estado?.municipios?.add(Municipio(id, n, abr, mutableStateListOf()))
-                estado?.municipios = estado.municipios.sortedBy { it.nombre }.toMutableList()
+                repository.updateMunicipio(current.id, n, createAbbreviation(n))
+                syncStatesFromDatabase()
                 return AnsStates.Acepted
             }
             return AnsStates.BadFormat
         }
         return AnsStates.Repeted
     }
-    fun DeletePersona(est : String, mun : String, tipo : String, identify : String)
-    {
-        val estado = states.find { it.nombre.lowercase().equals(est.lowercase()) }
-        if(estado == null) return
-        val municipio = estado.municipios.find { it.nombre.lowercase().equals(mun.lowercase()) }
-        if(municipio == null) return
-        if(tipo.equals("fisica"))
-        {
-            municipio.contribuidores.removeIf { it is PersonaFisica && it.curp.equals(identify) }
-            return
+
+    fun DeletePersona(est : String, mun : String, tipo : String, identify : String) {
+        val estado = states.find { it.nombre.equals(est, ignoreCase = true) } ?: return
+        val municipio = estado.municipios.find { it.nombre.equals(mun, ignoreCase = true) } ?: return
+        repository.deletePersona(municipio.id, tipo, identify)
+        municipio.contribuidores.removeIf{
+            it is PersonaFisica && it.curp == identify ||
+                    it is PersonaMoral && it.rfcRepresentante == identify
         }
-        if(tipo.equals("moral"))
-        {
-            municipio.contribuidores.removeIf { it is PersonaMoral && it.rfcRepresentante.equals(identify) }
-        }
+        syncStatesFromDatabase()
     }
-    fun AddPersona(est : String, mun : String, persona : Persona) : Boolean
-    {
-        val estado = states.find { it.nombre.lowercase().equals(est.lowercase()) }
-        if(estado == null) return false
-        val municipio = estado.municipios.find { it.nombre.lowercase().equals(mun.lowercase()) }
-        if(municipio == null) return false
-        if(municipio.contribuidores.find {
-            it is PersonaFisica && persona is PersonaFisica && it.curp.equals((persona as PersonaFisica).curp)  ||
-                it is PersonaMoral && persona is PersonaMoral &&
-                    it.rfcRepresentante.equals((persona as PersonaMoral).rfcRepresentante)
-        } == null) {
-            municipio.contribuidores.add(persona)
+
+    fun AddPersona(est : String, mun : String, persona : Persona) : Boolean {
+        val estado = states.find { it.nombre.equals(est, ignoreCase = true) } ?: return false
+        val municipio = estado.municipios.find { it.nombre.equals(mun, ignoreCase = true) } ?: return false
+        val alreadyExists = municipio.contribuidores.any {
+            it is PersonaFisica && persona is PersonaFisica && it.curp.equals(persona.curp, ignoreCase = true) ||
+                it is PersonaMoral && persona is PersonaMoral && it.rfcRepresentante.equals(persona.rfcRepresentante, ignoreCase = true)
+        }
+        if (!alreadyExists) {
+            repository.insertPersona(municipio.id, persona)
+            syncStatesFromDatabase()
             return true
         }
         return false
     }
-    fun UpdatePersona(est : String, mun : String, tipo : String, original: String, persona: Persona) : Boolean
-    {
-        val estado = states.find { it.nombre.lowercase().equals(est.lowercase()) }
-        if(estado == null) return false
-        val municipio = estado.municipios.find { it.nombre.lowercase().equals(mun.lowercase()) }
-        if(municipio == null) return false
-        if(municipio.contribuidores.find {
-                it is PersonaFisica && persona is PersonaFisica && it.curp.equals(persona.curp)  ||
-                        it is PersonaMoral && persona is PersonaMoral &&
-                        it.rfcRepresentante.equals(persona.rfcRepresentante)
-            } == null) {
-            municipio.contribuidores.add(persona)
-            municipio.contribuidores.removeIf{
-                tipo == "fisica" && it is PersonaFisica && it.curp.equals(original) ||
-                        tipo == "moral" && it is PersonaMoral && it.rfcRepresentante.equals(original)
-            }
+
+    fun UpdatePersona(est : String, mun : String, tipo : String, original: String, persona: Persona) : Boolean {
+        val estado = states.find { it.nombre.equals(est, ignoreCase = true) } ?: return false
+        val municipio = estado.municipios.find { it.nombre.equals(mun, ignoreCase = true) } ?: return false
+        val duplicated = municipio.contribuidores.any {
+            it is PersonaFisica && persona is PersonaFisica && !persona.curp.equals(original, ignoreCase = true) &&
+                it.curp.equals(persona.curp, ignoreCase = true) ||
+                it is PersonaMoral && persona is PersonaMoral && !persona.rfcRepresentante.equals(original, ignoreCase = true) &&
+                it.rfcRepresentante.equals(persona.rfcRepresentante, ignoreCase = true)
+        }
+        if (!duplicated) {
+            repository.updatePersona(municipio.id, tipo, original, persona)
+            syncStatesFromDatabase()
             return true
         }
         return false
+    }
+
+    private fun syncStatesFromDatabase() {
+        val storedStates = repository.getAllStates()
+        if (storedStates.isEmpty()) {
+            repository.seedStates(defaultStates)
+        }
+        states = repository.getAllStates()
+            .sortedBy { it.nombre }
+            .toMutableStateList()
+    }
+
+    private fun createAbbreviation(value: String): String {
+        val words = value.split(" ").filter { it.isNotBlank() }
+        var abbreviation = words.joinToString(separator = "") { it.first().toString() }
+        if (abbreviation.length == 1 && words.first().length > 1) {
+            abbreviation += words.first()[1]
+        }
+        return abbreviation.uppercase()
     }
 }
